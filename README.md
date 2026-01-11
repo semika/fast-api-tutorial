@@ -1,3 +1,4 @@
+
 ### Build Docker image
 > docker build -t fast-api-tutorial:1.0 .
 
