@@ -1,9 +1,11 @@
+### Run locally
+> uvicorn main:app --host 0.0.0.0 --port 8000
 
 ### Build Docker image
 > docker build -t fast-api-tutorial:1.0 .
 
 ### Run docker image
-> docker run --name fast-api-tutorial -p 8000:8000 -p 3306:3306 fast-api-tutorial:1.0
+> docker run --name fast-api-tutorial -p 8000:8000 fast-api-tutorial:1.0
 
 ### Remove docker container
 > docker container rm e106980b5830
