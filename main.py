@@ -5,8 +5,23 @@ from config import settings
 import boto3
 import json
 import logging
+from opensearchpy import OpenSearch
 
 logger = logging.getLogger(__name__)
+
+# OpenSearch client setup
+auth = (settings.opensearch_user, settings.opensearch_password) # For testing only. Don't store credentials in code.
+
+open_search_client = OpenSearch(
+    hosts=[{"host": settings.opensearch_host, "port": 443}],
+    http_auth=auth,
+    http_compress=True,  # enables gzip compression for request bodies
+    use_ssl=True,
+    verify_certs=True,
+    ssl_assert_hostname=False,
+    ssl_show_warn=False,
+)
+
 
 # Initialize AWS Bedrock client for Claude
 bedrock_runtime = None
@@ -71,7 +86,25 @@ async def open_search(request: OpenSearchRequest) -> OpenSearchResponse:
     
     # Here you would add the logic to interact with OpenSearch
     # For demonstration, we will just echo back the input data
-    output_data = {"query_embedding": query_embedding}
+    # Perform the search
+    
+    #q = 'cherry'
+    query = {
+    'size': 5,
+    'query': {
+        'multi_match': {
+        'query': user_query,
+        'fields': ['title^2', 'director']
+        }
+    }
+    }
+
+    response = open_search_client.search(
+        body = query,
+        index = 'products-mg'
+    )
+
+    output_data = {"query_embedding": response}
     return OpenSearchResponse(output=output_data)
 
 def get_text_embedding_bedrock(text: str) -> List[float]:
