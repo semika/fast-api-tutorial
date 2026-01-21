@@ -55,7 +55,7 @@ async def root():
     return {"message": "Hello World"}
 
 
-@app.post("/open-search")
+@app.post("/open-text-search")
 async def open_search(request: OpenSearchRequest) -> OpenSearchResponse:
 
     """
@@ -81,9 +81,6 @@ async def open_search(request: OpenSearchRequest) -> OpenSearchResponse:
     filters = request.filters;
     result_size = request.size;
 
-     # Generate embedding and search
-    query_embedding = get_text_embedding_bedrock(user_query)
-    
     # Here you would add the logic to interact with OpenSearch
     # For demonstration, we will just echo back the input data
     # Perform the search
@@ -92,11 +89,11 @@ async def open_search(request: OpenSearchRequest) -> OpenSearchResponse:
     query = {
     'size': 5,
     'query': {
-        'multi_match': {
-        'query': user_query,
-        'fields': ['title^2', 'director']
+            'multi_match': {
+                'query': user_query,
+                'fields': ['title^2', 'director']
+            }
         }
-    }
     }
 
     response = open_search_client.search(
@@ -106,6 +103,51 @@ async def open_search(request: OpenSearchRequest) -> OpenSearchResponse:
 
     output_data = {"query_embedding": response}
     return OpenSearchResponse(output=output_data)
+
+@app.post("/open-syamentic-search")
+async def open_syamentic_search(request: OpenSearchRequest) -> OpenSearchResponse:
+    """
+    Expected JSON payload:
+
+    {
+        "query": {
+            "knn": {
+                "my_vector": { # Name of the vector field
+                    "vector": [0.1, 0.2, 0.3], # Query vector
+                    "k": 2
+                }
+            }
+        }
+    }
+
+    """
+    
+    user_query = request.query.strip()
+    if not user_query:
+        return OpenSearchResponse(output = {'error': 'Query is required', 'status' : 400 })
+
+     # Generate embedding and search
+    query_embedding = get_text_embedding_bedrock(user_query)
+
+    query = {
+        "query": {
+            "knn": {
+                "embedding": {
+                    "vector": query_embedding,
+                    "k": 3
+                }
+            }
+        }
+    }
+
+    response = open_search_client.search(
+        body = query,
+        index = 'products-mg'
+    )
+
+    output_data = {"query_embedding": response}
+    return OpenSearchResponse(output=output_data)
+
 
 def get_text_embedding_bedrock(text: str) -> List[float]:
     """
@@ -121,7 +163,12 @@ def get_text_embedding_bedrock(text: str) -> List[float]:
         raise RuntimeError("Bedrock runtime client is not configured")
 
     try:
-        body = json.dumps({"inputText": text})
+        body = json.dumps(
+                {
+                    "inputText": text,
+                    "dimensions": 512 
+                }
+            )
         response = bedrock_runtime.invoke_model(
             modelId="amazon.titan-embed-text-v2:0",
             body=body
@@ -141,4 +188,25 @@ def get_text_embedding_bedrock(text: str) -> List[float]:
         return embedding
     except Exception as e:
         logger.error(f"Failed to get Titan embedding: {e}")
+        raise
+
+##
+@app.get("/get_index_meta_info")
+async def get_index_meta_info(index_name : str):
+    """
+    Retrieve metadata information for a given OpenSearch index.
+    
+    Args:
+        index_name: Name of the OpenSearch index.
+        
+    Returns:
+        Dict[str, Any]: Metadata information of the index.
+    """
+    try:
+        response = open_search_client.indices.get(index=index_name)
+       # return response.get(index_name, {})
+        #output_data = {"query_embedding": response}
+        return OpenSearchResponse(output=response)
+    except Exception as e:
+        logger.error(f"Failed to get index metadata for {index_name}: {e}")
         raise

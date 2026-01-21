@@ -42,4 +42,21 @@ When you switch between two git accounts, you can set the origin URL as follows
 
    https://docs.opensearch.org/latest/clients/python-low-level/
 
+2. Open search Symentic search tutorial
+
+   https://docs.opensearch.org/latest/vector-search/ai-search/semantic-search/#manual-setup
+
+3. How to create a vector index
+
+   https://docs.opensearch.org/latest/vector-search/creating-vector-index/
+
+4. How to prepare embeddings (vector) in open search
+
+   https://docs.opensearch.org/latest/vector-search/getting-started/vector-search-options/
+
+5. KNN query API documentation
+
+   https://docs.opensearch.org/latest/query-dsl/specialized/k-nn/index/
+      
+
    
