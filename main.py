@@ -45,6 +45,10 @@ class OpenSearchRequest(BaseModel):
     filters: Dict[str, Any]
     size: int
 
+class AnalyzerRequest(BaseModel):
+    analyzerName: str
+    inputText: str
+
 class OpenSearchResponse(BaseModel):
     output: Dict[str, Any]
 
@@ -148,6 +152,72 @@ async def open_syamentic_search(request: OpenSearchRequest) -> OpenSearchRespons
     output_data = {"query_embedding": response}
     return OpenSearchResponse(output=output_data)
 
+@app.post("/open-autocomplete-search")
+async def open_autocomplete_search(request: OpenSearchRequest) -> OpenSearchResponse:
+    """
+    Expected JSON payload:
+
+    {
+        "query": {
+            "match": {
+            "title": "sear"
+            }
+        }
+    }
+
+    """
+    
+    prefix = request.query.strip()
+    if not prefix:
+        return OpenSearchResponse(output = {'error': 'Prefix is required', 'status' : 400 })
+
+    query = {
+        "query": {
+            "match": {
+                "name.suggest": prefix
+            }
+        }
+    }
+
+    response = open_search_client.search(
+        body = query,
+        index = 'products-mg'
+    )
+
+    output_data = {"suggestions": response}
+    return OpenSearchResponse(output=output_data)
+
+
+#Test analyzer behaviour
+@app.post("/test-analyzer")
+async def test_analyzer(request: AnalyzerRequest) -> OpenSearchResponse:
+    """
+    Expected JSON payload:
+
+    {
+        "analyzer": "standard",
+        "text": [
+        "first array element",
+        "second array element"
+        ]
+    }
+
+    """
+    
+    analyzer_name = request.analyzerName.strip()
+    if not analyzer_name:
+        return OpenSearchResponse(output = {'error': 'Analyer name is required', 'status' : 400 })
+
+    response = open_search_client.indices.analyze(
+        index = "products-mg",
+        body =   {
+            "analyzer": analyzer_name,
+            "text": request.inputText
+        }
+    )
+
+    output_data = {"output": response}
+    return OpenSearchResponse(output=output_data)
 
 def get_text_embedding_bedrock(text: str) -> List[float]:
     """

@@ -57,6 +57,57 @@ When you switch between two git accounts, you can set the origin URL as follows
 5. KNN query API documentation
 
    https://docs.opensearch.org/latest/query-dsl/specialized/k-nn/index/
-      
 
+6. Developer guide
+
+   https://github.com/opensearch-project/opensearch-py/blob/main/guides/index_lifecycle.md
+
+7. How to set an index analyzer when creating an index.
+
+   https://docs.opensearch.org/latest/analyzers/index-analyzers/
+
+   When creating index mappings, you can supply the analyzer parameter for each text field. For example, the following request specifies the simple analyzer for the text_entry field:
+
+   ```json
+   PUT testindex
+   {
+      "mappings": {
+         "properties": {
+            "brand_name": {
+            "type": "text",
+            "analyzer": "autocomplete_index"
+            }
+         }
+      },
+      "settings": {
+                "index": {
+                    //....
+                    "analysis": {
+                        "filter": {
+                            "edge_ngram_filter": {
+                                "type": "edge_ngram",
+                                "min_gram": "2",
+                                "max_gram": "15"
+                            }
+                        },
+                        "analyzer": {
+                            "autocomplete_index": {
+                                "filter": [
+                                    "lowercase",
+                                    "asciifolding",
+                                    "edge_ngram_filter"
+                                ],
+                                "type": "custom",
+                                "tokenizer": "standard"
+                            }
+                        }
+                    }
+                    // ......
+                }
+   }
+   ```
+8. Complete API documentation
+
+   https://docs.opensearch.org/latest/api-reference/analyze-apis/
+   
    
